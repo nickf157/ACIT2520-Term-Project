@@ -1,4 +1,17 @@
 {
-  "users": [],
-  "tips": []
+  "users": [
+    {
+      "id": "50376f0d-6add-4585-a3c0-397f8eadd40a",
+      "username": "avatarUser",
+      "password": "pass",
+      "profilePicture": "https://example.com/avatar.png"
+    }
+  ],
+  "tips": [
+    {
+      "id": "be974a95-6a67-4b08-a365-0f3e7a95b85f",
+      "title": "Tip with avatar",
+      "userId": "50376f0d-6add-4585-a3c0-397f8eadd40a"
+    }
+  ]
 }

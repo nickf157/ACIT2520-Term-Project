@@ -1,37 +1,46 @@
 import { once } from "node:events";
-import { DEFAULT_HEADER, getUserFromRequest } from "../util/util.js";
-import { readDb } from "../../database/database.js";
+import { DEFAULT_HEADER } from "../util/util.js";
 
 function tipRoutes({ tipService, authService }) {
+  
+  const verifyUser = async (req, res) => {
+    const authHeader = req.headers.authorization;
+    const token = authHeader && authHeader.split(" ")[1];
+
+    if (!token) {
+      res.writeHead(401, DEFAULT_HEADER);
+      res.end(JSON.stringify({ error: "Unauthorized" }));
+      return null;
+    }
+
+    try {
+      const user = await authService.verify(token);
+      return user;
+    } catch (err) {
+      res.writeHead(401, DEFAULT_HEADER);
+      res.end(JSON.stringify({ error: "Unauthorized" }));
+      return null;
+    }
+  };
+
   return {
     "/tips:get": async (req, res) => {
-      const user = getUserFromRequest(req, res);
+      const user = await verifyUser(req, res);
       if (!user) return;
 
-      const db = await readDb();
-
-      const enrichedTips = db.tips.map((tip) => {
-        const tipUser = db.users.find((u) => u.id === tip.userId);
-        return {
-          id: tip.id,
-          title: tip.title,
-          userId: tip.userId,
-          username: tipUser?.username || "Unknown",
-          profilePicture: tipUser?.profilePicture || "",
-        };
-      });
+      const tips = await tipService.findAll();
 
       res.writeHead(200, DEFAULT_HEADER);
       return res.end(
         JSON.stringify({
-          results: enrichedTips,
+          results: tips,
           currentUserId: user.userId,
         })
       );
     },
 
     "/tips:post": async (req, res) => {
-      const user = getUserFromRequest(req, res);
+      const user = await verifyUser(req, res);
       if (!user) return;
 
       const [rawBody] = await once(req, "data");
@@ -58,7 +67,7 @@ function tipRoutes({ tipService, authService }) {
     },
 
     "/tips:put": async (req, res) => {
-      const user = getUserFromRequest(req, res);
+      const user = await verifyUser(req, res);
       if (!user) return;
 
       const [rawBody] = await once(req, "data");
@@ -86,7 +95,7 @@ function tipRoutes({ tipService, authService }) {
     },
 
     "/tips:delete": async (req, res) => {
-      const user = getUserFromRequest(req, res);
+      const user = await verifyUser(req, res);
       if (!user) return;
 
       const [rawBody] = await once(req, "data");
